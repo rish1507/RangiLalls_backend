@@ -1,0 +1,227 @@
+[
+    {
+      "borrowerDetails": {
+        "name": "Rajesh Kumar",
+        "address": "123 MG Road, Bangalore"
+      },
+      "noticeDetails": {
+        "issuedBy": "State Bank of India",
+        "issuedBranch": "MG Road Branch"
+      },
+      "auctionId": "AUC1001",
+      "auctionTitle": "Prime Commercial Property Auction",
+      "auctionDate": "2025-03-15T10:00:00Z",
+      "description": "A prime commercial property available for auction.",
+      "outstandingAmount": 5000000,
+      "reservePrice": 4500000,
+      "earnestMoney": 500000,
+      "incrementalValue": 50000,
+      "bidTimeDetails": {
+        "timeIn": "10:00 AM",
+        "time": "2 hours",
+        "limit": "infinity times"
+      },
+      "tenderPrice": 2000,
+      "participationClosingDate": {
+        "date": "2025-03-14T18:00:00Z",
+        "time": "6:00 PM"
+      },
+      "helpLineNo": "9876543210",
+      "zoneName": "South Zone",
+      "assetType": "Commercial",
+      "propertyAddress": "456 Residency Road, Bangalore",
+      "location": {
+        "type": "Point",
+        "coordinates": [77.5946, 12.9716]
+      },
+      "status": "upcoming",
+      "createdBy": "60d5f8b0c9b3a01234567890",
+      "updatedBy": "60d5f8b0c9b3a01234567891",
+      "isActive": true,
+      "inspectionDetails": {
+        "date": "2025-03-12",
+        "time": "10:00 AM to 5:00 PM",
+        "contactDetails": "Mr. Nikhil Kumar - 9876543210, Email: nikhil@bank.com"
+      }
+    },
+    {
+      "borrowerDetails": {
+        "name": "Priya Sharma",
+        "address": "45 Koramangala, Bangalore"
+      },
+      "noticeDetails": {
+        "issuedBy": "HDFC Bank",
+        "issuedBranch": "Koramangala Branch"
+      },
+      "auctionId": "AUC1002",
+      "auctionTitle": "Residential Apartment Auction",
+      "auctionDate": "2025-03-20T11:00:00Z",
+      "description": "3BHK luxury apartment in prime location.",
+      "outstandingAmount": 7500000,
+      "reservePrice": 7000000,
+      "earnestMoney": 700000,
+      "incrementalValue": 100000,
+      "bidTimeDetails": {
+        "timeIn": "11:00 AM",
+        "time": "3 hours",
+        "limit": "infinity times"
+      },
+      "tenderPrice": 3000,
+      "participationClosingDate": {
+        "date": "2025-03-19T18:00:00Z",
+        "time": "5:00 PM"
+      },
+      "helpLineNo": "9876543211",
+      "zoneName": "East Zone",
+      "assetType": "Residential",
+      "propertyAddress": "789 Palm Meadows, Koramangala, Bangalore",
+      "location": {
+        "type": "Point",
+        "coordinates": [77.6244, 12.9351]
+      },
+      "status": "upcoming",
+      "createdBy": "60d5f8b0c9b3a01234567890",
+      "updatedBy": "60d5f8b0c9b3a01234567891",
+      "isActive": true,
+      "inspectionDetails": {
+        "date": "2025-03-18",
+        "time": "11:00 AM to 4:00 PM",
+        "contactDetails": "Ms. Anjali Reddy - 9876543212, Email: anjali@bank.com"
+      }
+    },
+    {
+      "borrowerDetails": {
+        "name": "Suresh Patel",
+        "address": "78 Satellite Road, Ahmedabad"
+      },
+      "noticeDetails": {
+        "issuedBy": "ICICI Bank",
+        "issuedBranch": "Satellite Branch"
+      },
+      "auctionId": "AUC1003",
+      "auctionTitle": "Commercial Shop Space Auction",
+      "auctionDate": "2025-03-25T09:00:00Z",
+      "description": "Prime retail space in busiest market area.",
+      "outstandingAmount": 3500000,
+      "reservePrice": 3200000,
+      "earnestMoney": 320000,
+      "incrementalValue": 25000,
+      "bidTimeDetails": {
+        "timeIn": "9:00 AM",
+        "time": "4 hours",
+        "limit": "infinity times"
+      },
+      "tenderPrice": 1500,
+      "participationClosingDate": {
+        "date": "2025-03-24T17:00:00Z",
+        "time": "5:00 PM"
+      },
+      "helpLineNo": "9876543213",
+      "zoneName": "West Zone",
+      "assetType": "Commercial",
+      "propertyAddress": "123 Market Complex, Satellite, Ahmedabad",
+      "location": {
+        "type": "Point",
+        "coordinates": [72.5714, 23.0225]
+      },
+      "status": "upcoming",
+      "createdBy": "60d5f8b0c9b3a01234567890",
+      "updatedBy": "60d5f8b0c9b3a01234567891",
+      "isActive": true,
+      "inspectionDetails": {
+        "date": "2025-03-22",
+        "time": "9:00 AM to 6:00 PM",
+        "contactDetails": "Mr. Rajesh Mehta - 9876543213, Email: rajesh@bank.com"
+      }
+    },
+    {
+      "borrowerDetails": {
+        "name": "Amit Singh",
+        "address": "34 Civil Lines, Delhi"
+      },
+      "noticeDetails": {
+        "issuedBy": "Punjab National Bank",
+        "issuedBranch": "Civil Lines Branch"
+      },
+      "auctionId": "AUC1004",
+      "auctionTitle": "Luxury Villa Auction",
+      "auctionDate": "2025-04-01T10:00:00Z",
+      "description": "Luxurious 4BHK villa with modern amenities.",
+      "outstandingAmount": 12000000,
+      "reservePrice": 11000000,
+      "earnestMoney": 1100000,
+      "incrementalValue": 200000,
+      "bidTimeDetails": {
+        "timeIn": "10:00 AM",
+        "time": "3 hours",
+        "limit": "infinity times"
+      },
+      "tenderPrice": 5000,
+      "participationClosingDate": {
+        "date": "2025-03-31T18:00:00Z",
+        "time": "6:00 PM"
+      },
+      "helpLineNo": "9876543214",
+      "zoneName": "North Zone",
+      "assetType": "Residential",
+      "propertyAddress": "456 Green Valley, Civil Lines, Delhi",
+      "location": {
+        "type": "Point",
+        "coordinates": [77.2090, 28.6139]
+      },
+      "status": "upcoming",
+      "createdBy": "60d5f8b0c9b3a01234567890",
+      "updatedBy": "60d5f8b0c9b3a01234567891",
+      "isActive": true,
+      "inspectionDetails": {
+        "date": "2025-03-29",
+        "time": "10:00 AM to 5:00 PM",
+        "contactDetails": "Mr. Vikram Singh - 9876543214, Email: vikram@bank.com"
+      }
+    },
+    {
+      "borrowerDetails": {
+        "name": "Mohammad Khan",
+        "address": "56 Bandra West, Mumbai"
+      },
+      "noticeDetails": {
+        "issuedBy": "Axis Bank",
+        "issuedBranch": "Bandra Branch"
+      },
+      "auctionId": "AUC1005",
+      "auctionTitle": "Sea-facing Apartment Auction",
+      "auctionDate": "2025-04-05T11:00:00Z",
+      "description": "Premium 3BHK sea-facing apartment.",
+      "outstandingAmount": 15000000,
+      "reservePrice": 14000000,
+      "earnestMoney": 1400000,
+      "incrementalValue": 250000,
+      "bidTimeDetails": {
+        "timeIn": "11:00 AM",
+        "time": "4 hours",
+        "limit": "infinity times"
+      },
+      "tenderPrice": 7000,
+      "participationClosingDate": {
+        "date": "2025-04-04T17:00:00Z",
+        "time": "5:00 PM"
+      },
+      "helpLineNo": "9876543215",
+      "zoneName": "West Zone",
+      "assetType": "Residential",
+      "propertyAddress": "789 Sea View Apartments, Bandra West, Mumbai",
+      "location": {
+        "type": "Point",
+        "coordinates": [72.8277, 19.0596]
+      },
+      "status": "upcoming",
+      "createdBy": "60d5f8b0c9b3a01234567890",
+      "updatedBy": "60d5f8b0c9b3a01234567891",
+      "isActive": true,
+      "inspectionDetails": {
+        "date": "2025-04-02",
+        "time": "11:00 AM to 4:00 PM",
+        "contactDetails": "Ms. Priya Kapoor - 9876543215, Email: priya@bank.com"
+      }
+    }
+  ]
