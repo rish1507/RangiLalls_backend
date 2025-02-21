@@ -119,7 +119,6 @@ userSchema.methods.createEmailVerificationToken = function() {
     .digest('hex');
     
   this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-  
   return verificationToken;
 };
 

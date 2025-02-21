@@ -7,9 +7,9 @@ const {
   verifyEmail,
   getMe 
 } = require('../controllers/authController');
-
+const {verifyCaptcha} = require('../middleware/verifyCaptcha');
 router.post('/register', register);
-router.post('/login', login);
+router.post('/login',verifyCaptcha,login);
 router.get('/verify-email/:token', verifyEmail);
 router.get('/me', protect, getMe);
 module.exports = router;

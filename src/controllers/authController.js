@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const nodemailer=require("nodemailer")
 const { validateRegistrationInput, validateLoginInput } = require('../utils/validateUser');
-
+const crypto = require('crypto');
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -71,7 +71,6 @@ exports.forgotPassword = async (req, res) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    // Validate input
     const { error, isValid } = validateRegistrationInput(req.body);
     if (!isValid) {
       return res.status(400).json({ error });
@@ -92,15 +91,13 @@ exports.register = async (req, res) => {
       ...rest
     } = req.body;
 
-    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({
-        error:'Email is already registered'
+        error: 'Email is already registered'
       });
     }
 
-    // Create user
     const user = await User.create({
       firstName,
       lastName,
@@ -116,26 +113,33 @@ exports.register = async (req, res) => {
       ...rest
     });
 
-    // Generate verification token and save
     const verificationToken = user.createEmailVerificationToken();
     await user.save();
+    const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME,
+      to: user.email,
+      subject: 'Email Verification - Auction Platform',
+      html: `
+        <h2>Verify Your Email</h2>
+        <p>Hello ${user.firstName},</p>
+        <p>Thank you for registering with our auction platform. Please verify your email by clicking the link below:</p>
+        <a href="${verificationURL}" style="padding: 10px 15px; background-color: rgb(209 43 63); color: white; text-decoration: none; border-radius: 5px;">Verify Email</a>
+        <p>If you didn't create this account, please ignore this email.</p>
+        <p>Best regards,<br/>The Auction Team</p>
+      `
+    };
 
-    // Send verification email
-    // TODO: Implement email sending
-
-    // Generate JWT
-    const token = generateToken(user._id);
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log("Verification email sent successfully to:", user.email);
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+    }
 
     res.status(201).json({
       success: true,
-      token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        isEmailVerified: user.isEmailVerified
-      }
+      message: 'Registration successful! Please check your email to verify your account.'
     });
   } catch (error) {
     console.error(error);
@@ -145,8 +149,6 @@ exports.register = async (req, res) => {
     });
   }
 };
-
-// @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res) => {
@@ -164,7 +166,12 @@ exports.login = async (req, res) => {
         error: 'Invalid credentials'
       });
     }
-
+    if (!user.isEmailVerified) {
+      return res.status(401).json({
+        success: false,
+        error: 'Please verify your email before logging in'
+      });
+    }
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
@@ -179,13 +186,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        isEmailVerified: user.isEmailVerified
-      }
+      user 
     });
   } catch (error) {
     console.error(error);
@@ -205,19 +206,17 @@ exports.verifyEmail = async (req, res) => {
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
-
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
       emailVerificationExpires: { $gt: Date.now() }
     });
-
     if (!user) {
       return res.status(400).json({
         success: false,
         error: 'Invalid or expired verification token'
       });
     }
-
+ 
     user.isEmailVerified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationExpires = undefined;
