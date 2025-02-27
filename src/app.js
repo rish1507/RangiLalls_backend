@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const propertyRoutes = require('./routes/propertyRoutes');
 const auctionRoutes = require('./routes/auctionRegistration');
 const bidRoutes=require('./routes/proertyBidRoutes');
+const autoBiddingRoutes=require('./routes/autoBiddingRoutes')
 const errorMiddleware = require('./middleware/errorHandler');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/auction', auctionRoutes);
 app.use('/api/bids',bidRoutes);
+app.use('/api/auto-bidding', autoBiddingRoutes);
 app.use(errorMiddleware);
 
 // Export both app and server

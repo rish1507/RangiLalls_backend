@@ -18,7 +18,7 @@ const auctionRegistrationSchema = new mongoose.Schema({
   state: { type: String, required: true },
   city: { type: String, required: true },
   pincode: { type: String, required: true },
-  landline: { type: String, required: true },
+  landline: { type: String},
   mobile: { type: String, required: true },
   fax: String,
   

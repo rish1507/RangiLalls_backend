@@ -40,8 +40,7 @@ const userSchema = new mongoose.Schema({
     match: [/^[1-9][0-9]{5}$/, 'Please enter a valid pincode']
   },
   landlineNo: {
-    type: String,
-    required: [true, 'Landline number is required']
+    type: String
   },
   mobile: {
     type: String,
