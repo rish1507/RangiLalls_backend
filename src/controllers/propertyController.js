@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 
 exports.getProperties = async (req, res) => {
   try {
-    const properties = await mongoose.connection.db.collection("Property").find().toArray();
+    const properties = await mongoose.connection.db.collection("Properties").find().toArray();
     res.status(200).json({
       success: true,
       data: properties

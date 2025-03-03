@@ -182,9 +182,9 @@ const initializeSocket = (server) => {
     });
 
     // Handle auction timer updates
-    socket.on('auction-timer', ({ auctionId, timeLeft }) => {
-      io.to(auctionId).emit('timer-update', timeLeft);
-    });
+    // socket.on('auction-timer', ({ auctionId, timeLeft }) => {
+    //   io.to(auctionId).emit('timer-update', timeLeft);
+    // });
 
     // Handle disconnection
     socket.on('disconnect', () => {
