@@ -60,8 +60,9 @@ exports.uploadProperties = async (req, res) => {
     // Process properties for insertion
     const processedProperties = cleanedPropertiesData.map(property => {
       // Ensure numeric fields are stored as numbers
+      console.log(property['Reserve Price (Rs.)'])
       if (property['CIF ID']) property['CIF ID'] = Number(property['CIF ID']);
-      if (property['Reserve Price (Rs.)']) property['Reserve Price (Rs.)'] = Number(property['Reserve Price (Rs.)']);
+     // if (property['Reserve Price (Rs.)']) property['Reserve Price (Rs.)'] = Number(property['Reserve Price (Rs.)']);
       if (property['Auction ID']) property['Auction ID'] = Number(property['Auction ID']);
 
       if (property['Auction Date'] && typeof property['Auction Date'] === 'number') {
