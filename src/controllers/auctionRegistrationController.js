@@ -154,7 +154,7 @@ exports.registerForAuction = async (
   try {
     // Get user ID from authenticated request
     const userId = req.user._id;
-
+    console.log(req.body);
     // Check if user has already registered for this auction
     const existingRegistration = await AuctionRegistration.findOne({
       user: userId,

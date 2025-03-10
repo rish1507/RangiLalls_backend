@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const {uploadProperties} = require('../controllers/adminController');
+const {uploadProperties,getAllRegistrations,updateRegistrationStatus,getDashboardStats} = require('../controllers/adminController');
 const {protect} = require('../middleware/authMiddleware');
 const adminAuth = require('../middleware/adminAuth');
 
@@ -11,5 +11,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Admin routes
 router.post('/upload-properties', protect, adminAuth, upload.single('propertiesFile'), uploadProperties);
+// routes/adminRoutes.js - add these routes
 
+// Get all registrations
+router.get('/registrations', protect, adminAuth, getAllRegistrations);
+
+// Update registration status
+router.put('/registrations/:registrationId/status', protect, adminAuth, updateRegistrationStatus);
+
+// In adminRoutes.js
+router.get('/dashboard-stats', protect, adminAuth, getDashboardStats);
 module.exports = router;
