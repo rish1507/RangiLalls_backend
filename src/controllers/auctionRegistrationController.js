@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const numberToWords = require('number-to-words');
+const os=require("os");
 const cloudinary = require('cloudinary').v2;
 cloudinary.config({ 
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -25,7 +26,13 @@ const generateEMDChallan = async (registrationData) => {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 });
     const fileName = `EMD_Challan_${registrationData.challanNo}.pdf`;
-    const filePath = path.join(__dirname, '../temp', fileName);
+    
+    // Use system temp directory instead of a fixed path
+    const tempDir = os.tmpdir();
+    // Ensure the directory exists (should always exist for system temp)
+    const filePath = path.join(tempDir, fileName);
+    
+    console.log(`Generating PDF at: ${filePath}`);
     
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
@@ -34,6 +41,7 @@ const generateEMDChallan = async (registrationData) => {
     doc.fontSize(20).text('EMD Challan', { align: 'center' });
     doc.moveDown();
 
+    // Rest of your PDF generation code remains the same
     // Content
     doc.fontSize(12);
 
@@ -106,14 +114,16 @@ const generateEMDChallan = async (registrationData) => {
     doc.end();
 
     writeStream.on('finish', () => {
+      console.log(`PDF generation complete: ${filePath}`);
       resolve(filePath);
     });
 
-    writeStream.on('error', reject);
+    writeStream.on('error', (err) => {
+      console.error('Error generating PDF:', err);
+      reject(err);
+    });
   });
 };
-
-
 const sendEMDEmail = async (registrationData, challanPath) => {
   const emailContent = `
     <div style="font-family: Arial, sans-serif;">
@@ -149,8 +159,7 @@ const sendEMDEmail = async (registrationData, challanPath) => {
 
 
 // Controller functions
-exports.registerForAuction = async (
-  req, res) => {
+exports.registerForAuction = async (req, res) => {
   try {
     // Get user ID from authenticated request
     const userId = req.user._id;
@@ -187,12 +196,13 @@ exports.registerForAuction = async (
         } catch (error) {
           throw new Error(`Failed to upload ${folder}: ${error.message}`);
         }
-      };
-      // In your controller, modify the file upload calls:
-      const pancardUrl = await uploadToCloudinary(req.files.pancardFile[0], 'pancard');
-      const addressProofUrl = await uploadToCloudinary(req.files.addressProof[0], 'address-proof');
-      const paymentReceiptUrl = req.files.paymentReceipt ? 
-        await uploadToCloudinary(req.files.paymentReceipt[0], 'payment-receipts') : null;
+    };
+    
+    // In your controller, modify the file upload calls:
+    const pancardUrl = await uploadToCloudinary(req.files.pancardFile[0], 'pancard');
+    const addressProofUrl = await uploadToCloudinary(req.files.addressProof[0], 'address-proof');
+    const paymentReceiptUrl = req.files.paymentReceipt ? 
+      await uploadToCloudinary(req.files.paymentReceipt[0], 'payment-receipts') : null;
 
     // Create registration record
     const registrationData = {
@@ -206,24 +216,42 @@ exports.registerForAuction = async (
       confirmationCode: uuidv4().slice(0, 8).toUpperCase()
     };
 
-    const registration = await AuctionRegistration.create(registrationData);
+    try {
+      // Generate EMD Challan PDF
+      const challanPath = await generateEMDChallan(registrationData);
+      console.log('Challan generated successfully at:', challanPath);
 
-    // Generate EMD Challan PDF
-    const challanPath = await generateEMDChallan(registrationData);
+      // Create registration in database
+      const registration = await AuctionRegistration.create(registrationData);
+      
+      try {
+        // Send email with challan
+        await sendEMDEmail(registrationData, challanPath);
+        console.log('Email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+        // Continue even if email fails - we don't want to fail the registration process
+      }
 
-    // Send email with challan
-    await sendEMDEmail(registrationData, challanPath);
+      // Clean up temporary PDF file with better error handling
+      try {
+        await fs.promises.unlink(challanPath);
+        console.log('Temporary file deleted successfully');
+      } catch (unlinkError) {
+        console.error('Error deleting temporary challan file:', unlinkError);
+        // Don't fail if cleanup fails
+      }
 
-    // Clean up temporary PDF file
-    fs.unlink(challanPath, (err) => {
-      if (err) console.error('Error deleting temporary challan file:', err);
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Registration successful. EMD Challan has been sent to your email.',
-      data: registration
-    });
+      res.status(201).json({
+        success: true,
+        message: 'Registration successful. EMD Challan has been sent to your email.',
+        data: registration
+      });
+    } catch (processingError) {
+      console.error('Error in registration processing:', processingError);
+      // This is an internal server error
+      throw processingError; 
+    }
 
   } catch (error) {
     console.error('Registration error:', error);
