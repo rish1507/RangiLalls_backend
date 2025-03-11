@@ -95,7 +95,6 @@ exports.uploadProperties = async (req, res) => {
       
       // Add standard fields
       result['Auction ID'] = uuidv4();
-      result['bids'] = [];
       result['createdAt'] = new Date();
       result['updatedAt'] = new Date();
       
@@ -389,6 +388,74 @@ exports.deleteAuction = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error'
+    });
+  }
+};
+
+exports.addProperty = async (req, res) => {
+  try {
+    const propertyData = req.body;
+    
+    if (!propertyData['Auction ID']) {
+      return res.status(400).json({
+        success: false,
+        error: 'Auction ID is required'
+      });
+    }
+    
+    // Validate required fields
+    const requiredFields = [
+      'Loan Account No',
+      'CIF ID',
+      'CUSTOMER NAME',
+      'Property Location (City)',
+      'State',
+      'Property Type',
+      'Types of Possession',
+      'Reserve Price (Rs)',
+      'EMD Submission',
+      'Auction Date'
+    ];
+    
+    for (const field of requiredFields) {
+      if (!propertyData[field]) {
+        return res.status(400).json({
+          success: false,
+          error: `${field} is required`
+        });
+      }
+    }
+    const auctionId = uuidv4();
+    propertyData['Auction ID'] = auctionId;
+    // Add timestamps
+    propertyData.createdAt = new Date();
+    propertyData.updatedAt = new Date();
+    
+    // Ensure bids array exists
+    if (!propertyData.bids) {
+      propertyData.bids = [];
+    }
+    
+    // Insert the property into MongoDB
+    const result = await mongoose.connection.db.collection('Properties').insertOne(propertyData);
+    
+    if (result.acknowledged) {
+      res.json({
+        success: true,
+        message: 'Property added successfully',
+        propertyId: result.insertedId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to add property'
+      });
+    }
+  } catch (error) {
+    console.error('Error adding property:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error'
     });
   }
 };
