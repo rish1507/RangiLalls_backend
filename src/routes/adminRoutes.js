@@ -2,7 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const {uploadProperties,getAllRegistrations,updateRegistrationStatus,getDashboardStats,getAuctionRegistrations} = require('../controllers/adminController');
+const {uploadProperties,getAllRegistrations,
+    updateRegistrationStatus,getDashboardStats,getAuctionRegistrations,updateAuction,deleteAuction} = require('../controllers/adminController');
 const {protect} = require('../middleware/authMiddleware');
 const adminAuth = require('../middleware/adminAuth');
 
@@ -21,5 +22,7 @@ router.put('/registrations/:registrationId/status', protect, adminAuth, updateRe
 
 // In adminRoutes.js
 router.get('/dashboard-stats', protect, adminAuth, getDashboardStats);
-router.get('/auctions/:auctionId/registrations',getAuctionRegistrations);
+router.get('/auctions/:auctionId/registrations',protect,adminAuth,getAuctionRegistrations);
+router.put('/auctions/:auctionId',protect, adminAuth ,updateAuction);
+router.delete('/auctions/:auctionId', protect, adminAuth,deleteAuction);
 module.exports = router;

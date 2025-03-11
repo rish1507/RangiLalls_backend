@@ -37,6 +37,11 @@ exports.uploadProperties = async (req, res) => {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
+    
+    // Log raw headers to debug
+    const rawHeaders = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0];
+    console.log('Raw Excel Headers:', rawHeaders);
+    
     const propertiesData = XLSX.utils.sheet_to_json(sheet);
 
     if (propertiesData.length === 0) {
@@ -45,46 +50,60 @@ exports.uploadProperties = async (req, res) => {
         error: 'No data found in Excel sheet'
       });
     }
-    // Validate required fields
-    
-    
-    const cleanedPropertiesData = propertiesData.map(property => {
-      const cleanedProperty = {};
+
+    // Clean keys and fix field formats
+    const processedProperties = propertiesData.map(property => {
+      // Create a new object with all properties
+      const result = {};
       
-      // Clean keys by trimming whitespace
+      // Process each property
       Object.keys(property).forEach(key => {
+        // Create a clean key by trimming whitespace
         const cleanKey = key.trim();
-        cleanedProperty[cleanKey] = property[key];
+        
+        // Special mapping for known problematic fields
+        if (cleanKey === 'Reserve Price (Rs.)') {
+          result['Reserve Price (Rs)'] = property[key];
+        } 
+        else if (cleanKey === 'CUSTOMER NAME' || cleanKey === ' CUSTOMER NAME ' || cleanKey === 'CUSTOMER NAME ') {
+          result['CUSTOMER NAME'] = property[key];
+        }
+        else if (cleanKey === 'EMD Submission' || cleanKey === ' EMD Submission') {
+          result['EMD Submission'] = property[key];
+        }
+        else {
+          // Normal field, just copy it with the trimmed key
+          result[cleanKey] = property[key];
+        }
       });
       
-      return cleanedProperty;
-    });
-    // Process properties for insertion
-    const processedProperties = cleanedPropertiesData.map(property => {
-      // Ensure numeric fields are stored as numbers
-  
-      if (property['CIF ID']) property['CIF ID'] = Number(property['CIF ID']);
-     
-
-      if (property['Auction Date'] && typeof property['Auction Date'] === 'number') {
-        property['Auction Date'] = excelDateToString(property['Auction Date']);
+      // Convert numeric fields
+      if (result['CIF ID']) result['CIF ID'] = Number(result['CIF ID']);
+      
+      // Handle date conversions
+      if (result['Auction Date'] && typeof result['Auction Date'] === 'number') {
+        result['Auction Date'] = excelDateToString(result['Auction Date']);
       }
       
-      if (property['EMD Submission'] && typeof property['EMD Submission'] === 'number') {
-        property['EMD Submission'] = excelDateToString(property['EMD Submission']);
+      if (result['EMD Submission'] && typeof result['EMD Submission'] === 'number') {
+        result['EMD Submission'] = excelDateToString(result['EMD Submission']);
       }
       
-      if (property['Date'] && typeof property['Date'] === 'number') {
-        property['Date'] = excelDateToString(property['Date']);
+      if (result['Date'] && typeof result['Date'] === 'number') {
+        result['Date'] = excelDateToString(result['Date']);
       }
-      return {
-        ...property,
-        'Auction ID': uuidv4(),
-        bids: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      
+      // Add standard fields
+      result['Auction ID'] = uuidv4();
+      result['bids'] = [];
+      result['createdAt'] = new Date();
+      result['updatedAt'] = new Date();
+      
+      return result;
     });
+    
+    // Log a processed property to verify
+    console.log('First processed property:', JSON.stringify(processedProperties[0], null, 2));
 
     // Use bulk operations for better performance
     const result = await mongoose.connection.db.collection('Properties').bulkWrite(
@@ -110,7 +129,6 @@ exports.uploadProperties = async (req, res) => {
     });
   }
 };
-
 // Helper function to parse excel date in format "DD-MMM-YY"
 function excelDateToString(excelDate) {
   // Excel dates are number of days since 12/30/1899
@@ -288,6 +306,86 @@ exports.getAuctionRegistrations = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching auction registrations:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// Update an auction
+exports.updateAuction = async (req, res) => {
+  try {
+    const { auctionId } = req.params;
+    const updates = req.body;
+    
+    if (!auctionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Auction ID is required'
+      });
+    }
+    
+    // Prevent updating the Auction ID itself
+    if (updates['Auction ID']) {
+      delete updates['Auction ID'];
+    }
+    
+    // Add updatedAt timestamp
+    updates.updatedAt = new Date();
+    
+    const result = await mongoose.connection.db.collection("Properties").updateOne(
+      { "Auction ID": auctionId },
+      { $set: updates }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Auction not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Auction updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating auction:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// Delete an auction
+exports.deleteAuction = async (req, res) => {
+  try {
+    const { auctionId } = req.params;
+    
+    if (!auctionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Auction ID is required'
+      });
+    }
+    
+    const result = await mongoose.connection.db.collection("Properties").deleteOne({ "Auction ID": auctionId });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Auction not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Auction deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting auction:', error);
     res.status(500).json({
       success: false,
       error: 'Server error'
