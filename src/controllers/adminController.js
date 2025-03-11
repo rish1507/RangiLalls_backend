@@ -265,3 +265,32 @@ exports.getDashboardStats = async (req, res) => {
     });
   }
 };
+
+exports.getAuctionRegistrations = async (req, res) => {
+  try {
+    const { auctionId } = req.params;
+    
+    if (!auctionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Auction ID is required'
+      });
+    }
+    
+    // Query by 'auctionId' field - note this field in MongoDB is "Auction ID" as stored in Properties collection
+    const registrations = await AuctionRegistration.find({ auctionId: auctionId })
+      .populate('user', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: registrations
+    });
+  } catch (error) {
+    console.error('Error fetching auction registrations:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
