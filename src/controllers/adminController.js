@@ -51,8 +51,62 @@ exports.uploadProperties = async (req, res) => {
       });
     }
 
+    // Define required fields
+    const requiredFields = [
+      'Loan Account No',
+      'CIF ID',
+      'CUSTOMER NAME',
+      'ZONE',
+      'REGION',
+      'Property Location (City)',
+      'State',
+      'Property Type',
+      'Types of  Possession',
+      'Reserve Price (Rs.)',
+      'EMD Submission',
+      'Auction Date',
+      'Property Schedule'
+    ];
+
+    // First, validate the Excel headers
+    const excelHeaders = new Set(rawHeaders.map(header => header.trim()));
+    const missingHeaders = [];
+
+    // Check for missing headers with flexibility for different formats
+    requiredFields.forEach(field => {
+      // Special case for Reserve Price which might be in different formats
+      if (field === 'Reserve Price (Rs.)') {
+        if (!excelHeaders.has('Reserve Price (Rs.)') && 
+            !excelHeaders.has('Reserve Price (Rs)') && 
+            !excelHeaders.has('Reserve Price')) {
+          missingHeaders.push(field);
+        }
+      }
+      // Special case for EMD Submission which might have a space prefix
+      else if (field === 'EMD Submission') {
+        if (!excelHeaders.has('EMD Submission')) {
+          missingHeaders.push(field);
+        }
+      }
+      // Special case for CUSTOMER NAME which might have spaces
+      if (!excelHeaders.has('CUSTOMER NAME')) {
+        missingHeaders.push('CUSTOMER NAME');
+      }
+      // Normal case
+      else if (!excelHeaders.has(field)) {
+        missingHeaders.push(field);
+      }
+    });
+
+    if (missingHeaders.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Excel file is missing required columns: ${missingHeaders.join(', ')}`
+      });
+    }
+
     // Clean keys and fix field formats
-    const processedProperties = propertiesData.map(property => {
+    const processedProperties = propertiesData.map((property, index) => {
       // Create a new object with all properties
       const result = {};
       
@@ -65,10 +119,10 @@ exports.uploadProperties = async (req, res) => {
         if (cleanKey === 'Reserve Price (Rs.)') {
           result['Reserve Price (Rs)'] = property[key];
         } 
-        else if (cleanKey === 'CUSTOMER NAME' || cleanKey === ' CUSTOMER NAME ' || cleanKey === 'CUSTOMER NAME ') {
+        else if (cleanKey === 'CUSTOMER NAME') {
           result['CUSTOMER NAME'] = property[key];
         }
-        else if (cleanKey === 'EMD Submission' || cleanKey === ' EMD Submission') {
+        else if (cleanKey === 'EMD Submission') {
           result['EMD Submission'] = property[key];
         }
         else {
@@ -76,6 +130,34 @@ exports.uploadProperties = async (req, res) => {
           result[cleanKey] = property[key];
         }
       });
+      
+      // Validate individual row data
+      const missingFields = [];
+      const normalizedRequiredFields = [
+        'Loan Account No',
+        'CIF ID',
+        'CUSTOMER NAME',
+        'ZONE',
+        'REGION',
+        'Property Location (City)',
+        'State',
+        'Property Type',
+        'Types of  Possession',
+        'Reserve Price (Rs)',  // Note: Normalized to the format we use in the database
+        'EMD Submission',
+        'Auction Date',
+        'Property Schedule'
+      ];
+      
+      normalizedRequiredFields.forEach(field => {
+        if (result[field] === undefined || result[field] === null || result[field] === '') {
+          missingFields.push(field);
+        }
+      });
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Row ${index + 2} (${result['CUSTOMER NAME'] || 'Unknown'}) is missing required fields: ${missingFields.join(', ')}`);
+      }
       
       // Convert numeric fields
       if (result['CIF ID']) result['CIF ID'] = Number(result['CIF ID']);
@@ -91,6 +173,15 @@ exports.uploadProperties = async (req, res) => {
       
       if (result['Date'] && typeof result['Date'] === 'number') {
         result['Date'] = excelDateToString(result['Date']);
+      }
+      
+      // Convert Reserve Price to number
+      if (result['Reserve Price (Rs)']) {
+        const price = Number(result['Reserve Price (Rs)']);
+        if (isNaN(price)) {
+          throw new Error(`Row ${index + 2} (${result['CUSTOMER NAME'] || 'Unknown'}) has an invalid Reserve Price: ${result['Reserve Price (Rs)']}`);
+        }
+        result['Reserve Price (Rs)'] = price;
       }
       
       // Add standard fields
