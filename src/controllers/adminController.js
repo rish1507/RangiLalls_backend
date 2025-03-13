@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const Property = require('../models/Property');
 const User =require("../models/User")
 const AuctionRegistration=require("../models/AuctionRegistration")
-const { v4: uuidv4 } = require('uuid'); // Import UUID package
 // Get property count
 exports.getPropertyCount = async (req, res) => {
   try {
@@ -40,10 +39,7 @@ exports.uploadProperties = async (req, res) => {
     
     // Log raw headers to debug
     const rawHeaders = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0];
-    console.log('Raw Excel Headers:', rawHeaders);
-    
     const propertiesData = XLSX.utils.sheet_to_json(sheet);
-
     if (propertiesData.length === 0) {
       return res.status(400).json({
         success: false,
@@ -185,31 +181,45 @@ exports.uploadProperties = async (req, res) => {
       }
       
       // Add standard fields
-      result['Auction ID'] = uuidv4();
       result['createdAt'] = new Date();
       result['updatedAt'] = new Date();
       
       return result;
     });
     
-    // Log a processed property to verify
-    console.log('First processed property:', JSON.stringify(processedProperties[0], null, 2));
-
-    // Use bulk operations for better performance
-    const result = await mongoose.connection.db.collection('Properties').bulkWrite(
-      processedProperties.map(property => ({
-        updateOne: {
-          filter: { 'Auction ID': property['Auction ID'] },
-          update: { $set: property },
-          upsert: true
-        }
-      }))
-    );
-
+    const results = [];
+    for (const prop of processedProperties) {
+      // Convert to schema-friendly format
+      const propertyData = {
+        loanAccountNo: prop['Loan Account No'],
+        cifId: prop['CIF ID'],
+        customerName: prop['CUSTOMER NAME'],
+        zone: prop['ZONE'],
+        region: prop['REGION'],
+        propertyLocation: prop['Property Location (City)'],
+        state: prop['State'],
+        propertyType: prop['Property Type'],
+        possessionType: prop['Types of  Possession'],
+        reservePrice: prop['Reserve Price (Rs)'],
+        emdSubmission: new Date(prop['EMD Submission']), // Convert to Date
+        auctionDate: new Date(prop['Auction Date']), // Convert to Date
+        propertySchedule: prop['Property Schedule']
+      };
+      
+      // Find and update or create
+      const property = await Property.findOneAndUpdate(
+        { loanAccountNo: propertyData.loanAccountNo }, // Unique identifier
+        propertyData,
+        { upsert: true, new: true }
+      );
+      
+      results.push(property);
+    }
+    
     res.json({
       success: true,
-      count: result.upsertedCount + result.modifiedCount,
-      message: `Successfully processed ${result.upsertedCount + result.modifiedCount} properties`
+      count: results.length,
+      message: `Successfully processed ${results.length} properties`
     });
   } catch (error) {
     console.error('Error uploading properties:', error);
@@ -516,8 +526,7 @@ exports.addProperty = async (req, res) => {
         });
       }
     }
-    const auctionId = uuidv4();
-    propertyData['Auction ID'] = auctionId;
+    
     // Add timestamps
     propertyData.createdAt = new Date();
     propertyData.updatedAt = new Date();

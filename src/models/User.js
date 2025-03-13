@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -47,7 +48,6 @@ const userSchema = new mongoose.Schema({
     required: [true, "Mobile number is required"],
     match: [/^[0-9]{10}$/, "Please enter a valid mobile number"],
   },
-  // Add this to your User.js model schema
   role: {
     type: String,
     enum: ["user", "admin"],
@@ -94,6 +94,35 @@ const userSchema = new mongoose.Schema({
   emailVerificationExpires: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+
+  // New fields for profile management
+  bankName: {
+    type: String,
+  },
+  accountNo: {
+    type: String,
+  },
+  ifscCode: {
+    type: String,
+  },
+  
+  interestedProperties: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Property'
+  }],
+  
+  bids: [{
+    propertyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Property'
+    },
+    amount: Number,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  
   createdAt: {
     type: Date,
     default: Date.now,

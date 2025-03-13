@@ -1,124 +1,64 @@
-// models/Property.js
 const mongoose = require('mongoose');
 
 const propertySchema = new mongoose.Schema({
-  "Loan Account No": {
+  loanAccountNo: {
     type: String,
-    required: [true, 'Loan Account Number is required'],
+    required: true,
     trim: true
   },
-  "CIF ID": {
+  cifId: {
     type: Number,
-    required: [true, 'CIF ID is required']
+    required: true
   },
-  "CUSTOMER NAME": {
+  customerName: {
     type: String,
-    required: [true, 'Customer name is required'],
+    required: true,
     trim: true
   },
-  "ZONE": {
-    type: String,
-    required: [true, 'Zone is required'],
-    trim: true
+  zone:{
+    type:String,
+    required:true,
+    trim :true
   },
-  "REGION": {
-    type: String,
-    required: [true, 'Region is required'],
-    trim: true
+  region :{
+    type:String,
+    required:true,
+    trim :true
   },
-  "Property Location (City)": {
+  propertyLocation: {
     type: String,
-    required: [true, 'Property location city is required'],
-    trim: true
+    required: true
   },
-  "State": {
+  state: {
     type: String,
-    required: [true, 'State is required'],
-    trim: true
+    required: true
   },
-  "Property Type": {
+  propertyType: {
     type: String,
-    required: [true, 'Property type is required'],
-    trim: true
+    required: true
   },
-  "Types of Possession": {
+  possessionType: {
     type: String,
-    required: [true, 'Possession type is required'],
-    trim: true
+    required: true
   },
-  "Reserve Price (Rs.)": {
+  reservePrice: {
     type: Number,
-    required: [true, 'Reserve price is required']
+    required: true
   },
-  "EMD Submission": {
-    type: String,
-    required: [true, 'EMD submission date is required'],
-    trim: true
-  },
-  "Auction Date": {
-    type: String,
-    required: [true, 'Auction date is required'],
-    trim: true
-  },
-  "Vendor": {
-    type: String,
-    required: [true, 'Vendor is required'],
-    trim: true
-  },
-  "Auction ID": {
-    type: Number,
-    required: [true, 'Auction ID is required'],
-    unique: true
-  },
-  "Property Schedule": {
-    type: String,
-    trim: true
-  },
-  "Date": {
-    type: String,
-    trim: true
-  },
-  // Additional fields to support auction functionality
-  bids: [{
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    amount: {
-      type: Number,
-      required: true
-    },
-    timestamp: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  winningBid: {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    amount: Number,
-    timestamp: Date
-  },
-  createdAt: {
+  emdSubmission: {
     type: Date,
-    default: Date.now
+    required: true
   },
-  updatedAt: {
+  auctionDate: {
     type: Date,
-    default: Date.now
-  }
-}, { timestamps: true });
+    required: true
+  },
+  propertySchedule: {
+    type: String,
+    required: true
+  },
+}, {
+  timestamps: true
+});
 
-// Indexes for faster querying
-propertySchema.index({ "Auction ID": 1 }, { unique: true });
-propertySchema.index({ "EMD Submission": 1 });
-propertySchema.index({ "Auction Date": 1 });
-propertySchema.index({ status: 1 });
-propertySchema.index({ "ZONE": 1, "REGION": 1 });
-propertySchema.index({ "State": 1, "Property Location (City)": 1 });
-propertySchema.index({ "Property Type": 1 });
-
-module.exports = mongoose.model('Property', propertySchema);
+module.exports = mongoose.model('properties', propertySchema);

@@ -1,9 +1,12 @@
 const User = require('../models/User');
+const AuctionBid = require('../models/AuctionBid');
 const jwt = require('jsonwebtoken');
 const nodemailer=require("nodemailer")
 const { validateRegistrationInput, validateLoginInput } = require('../utils/validateUser');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const Property = require("../models/Property")
+const mongoose=require("mongoose")
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -337,4 +340,240 @@ exports.getMe = async (req, res) => {
       error: 'Server Error'
     });
   }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { 
+      firstName, lastName, organizationName, 
+      mobile, landlineNo, pancardNo, 
+      address, state, city, pincode,
+      bankName, accountNo, ifscCode
+    } = req.body;
+    
+    // Only update fields that are provided
+    const updateData = {};
+    
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
+    if (organizationName) updateData.organizationName = organizationName;
+    if (mobile) updateData.mobile = mobile;
+    if (landlineNo !== undefined) updateData.landlineNo = landlineNo;
+    if (pancardNo !== undefined) updateData.pancardNo = pancardNo;
+    if (address !== undefined) updateData.address = address;
+    if (state) updateData.state = state;
+    if (city) updateData.city = city;
+    if (pincode) updateData.pincode = pincode;
+    if (bankName !== undefined) updateData.bankName = bankName;
+    if (accountNo !== undefined) updateData.accountNo = accountNo;
+    if (ifscCode !== undefined) updateData.ifscCode = ifscCode;
+    
+    // Find and update user
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error updating profile'
+    });
+  }
+};
+// Add property to interested list
+exports.addInterestedProperty = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const property = await Property.findOne({ _id: propertyId });
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: 'Property not found'
+      });
+    }
+    
+    // Add to interested list if not already there
+    const user = await User.findById(req.user._id);
+    
+    if (!user.interestedProperties.includes(propertyId)) {
+      user.interestedProperties.push(propertyId);
+      await user.save();
+    }
+    
+    res.json({
+      success: true,
+      message: 'Property added to interested list'
+    });
+  } catch (error) {
+    console.error('Error adding interested property:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error updating interested properties'
+    });
+  }
+};
+
+// Remove property from interested list
+exports.removeInterestedProperty = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    
+    // Find and update user
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // Remove from interested list
+    user.interestedProperties = user.interestedProperties.filter(
+      id => id.toString() !== propertyId
+    );
+    
+    await user.save();
+    
+    res.json({
+      success: true,
+      message: 'Property removed from interested list'
+    });
+  } catch (error) {
+    console.error('Error removing interested property:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error updating interested properties'
+    });
+  }
+};
+
+// Get interested properties
+exports.getInterestedProperties = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // If no interested properties, return empty array
+    if (!user.interestedProperties || user.interestedProperties.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+    
+    // Get all interested properties using Mongoose Population or find
+    
+    const properties = await Property.find({
+      _id: { $in: user.interestedProperties }
+    });
+    
+    res.json({
+      success: true,
+      data: properties
+    });
+  } catch (error) {
+    console.error('Error fetching interested properties:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error fetching interested properties'
+    });
+  }
+};
+
+// Get user's bidding history
+exports.getUserBiddingHistory = async (req, res) => {
+  try {
+    // Get user bids
+    const bids = await AuctionBid.find({ userId: req.user._id })
+      .sort({ timestamp: -1 });
+    
+    // If no bids, return empty array
+    if (!bids || bids.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+    
+    // Get auction IDs from bids
+    const auctionIds = [...new Set(bids.map(bid => bid.auctionId))];
+    
+    // Get property details for each auction using Mongoose model
+    
+    const properties = await Property.find({
+      _id: { $in: auctionIds }
+    });
+    
+    // Create a map of auction ID to property
+    const propertyMap = new Map();
+    properties.forEach(property => {
+      propertyMap.set(property._id.toString(), property);
+    });
+    
+    // Enhance each bid with property details and status
+    const enhancedBids = bids.map(bid => {
+      const property = propertyMap.get(bid.auctionId);
+      
+      // Determine if this is the highest bid for the auction
+      const isWinningBid = bids
+        .filter(b => b.auctionId === bid.auctionId)
+        .sort((a, b) => b.amount - a.amount)[0]._id.toString() === bid._id.toString();
+      
+      // Determine if the auction is still active
+      const auctionActive = isAuctionActive(property?.auctionDate);
+      
+      return {
+        ...bid.toObject(),
+        property,
+        isWinningBid,
+        auctionActive
+      };
+    });
+    
+    res.json({
+      success: true,
+      data: enhancedBids
+    });
+  } catch (error) {
+    console.error('Error fetching bidding history:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error fetching bidding history'
+    });
+  }
+};
+
+// Helper function to check if auction is active
+const isAuctionActive = (auctionDate) => {
+  if (!auctionDate) return false;
+  
+  const auctionEndDate = new Date(auctionDate);
+  // Set auction end time to 5 PM on auction day
+  auctionEndDate.setHours(17, 0, 0, 0);
+  
+  // Compare with current time
+  const now = new Date();
+  
+  return now <= auctionEndDate;
 };

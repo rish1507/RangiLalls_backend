@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 exports.getProperties = async (req, res) => {
   try {
     // Get all properties from the collection
-    const properties = await mongoose.connection.db.collection("Properties").find().toArray();
+    const properties = await Property.find({}).lean();
     
     // Get current date for comparison
     const currentDate = new Date();
