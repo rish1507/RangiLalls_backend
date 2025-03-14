@@ -398,6 +398,7 @@ exports.updateProfile = async (req, res) => {
 exports.addInterestedProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
+    console.log(propertyId);
     const property = await Property.findOne({ _id: propertyId });
     if (!property) {
       return res.status(404).json({

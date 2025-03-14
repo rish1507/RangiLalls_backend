@@ -45,6 +45,10 @@ const propertySchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  vendor: {
+    type: String,
+    required: true
+  },
   emdSubmission: {
     type: Date,
     required: true

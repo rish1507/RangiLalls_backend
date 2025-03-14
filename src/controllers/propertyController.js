@@ -10,7 +10,7 @@ exports.getProperties = async (req, res) => {
   try {
     // Get all properties from the collection
     const properties = await Property.find({}).lean();
-    
+    console.log(properties.length);
     // Get current date for comparison
     const currentDate = new Date();
     
