@@ -136,7 +136,7 @@ const sendEMDEmail = async (registrationData, challanPath) => {
       <p><strong>Auction Date:</strong> ${new Date(registrationData.auctionDate).toLocaleDateString()}</p>
       <p><strong>Auction ID:</strong> ${registrationData.auctionId}</p>
 
-      <p>Once your payment is confirmed, you will get a confirmation code, which you must use for bidding the first time in the e-auction.</p>
+   <p>Once your payment is confirmed, you will get a confirmation code, which you must use for bidding the first time in the e-auction.</p>
 
       <p>For further queries, contact us at: <strong>+91-9310367526 </strong> <br>
       or write to us at: <strong><a href="mailto:rangilallsauction@gmail.com">rangilallsauction@gmail.com</a></strong></p>
@@ -342,6 +342,7 @@ exports.checkAuctionAccess = async (req, res) => {
     });
 
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       success: false,
       error: 'Error checking auction access'

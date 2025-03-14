@@ -495,9 +495,7 @@ exports.updateAuction = async (req, res) => {
     // Add updatedAt timestamp
     updates.updatedAt = new Date();
 
-    const result = await mongoose.connection.db
-      .collection("Properties")
-      .updateOne({ "Auction ID": auctionId }, { $set: updates });
+    const result = await Property.findByIdAndUpdate(auctionId, updates, { new: true });
 
     if (result.matchedCount === 0) {
       return res.status(404).json({
