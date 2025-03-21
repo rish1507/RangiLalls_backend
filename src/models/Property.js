@@ -61,8 +61,48 @@ const propertySchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  auctionStartTime: {
+    type: Date
+  },
+  auctionEndTime: {
+    type: Date
+  },
+  auctionExtensionCount: {
+    type: Number,
+    default: 0
+  },
+  auctionExtensionHistory: [{
+    extendedAt: Date,
+    previousEndTime: Date,
+    newEndTime: Date,
+    triggeringBidId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AuctionBid'
+    }
+  }]
 }, {
   timestamps: true
+});
+
+propertySchema.pre('save', function(next) {
+  // If auctionDate exists but times aren't set, set defaults
+  if (this.auctionDate && (!this.auctionStartTime || !this.auctionEndTime)) {
+    // Default auction start time is 10 AM on auction date
+    if (!this.auctionStartTime) {
+      const startTime = new Date(this.auctionDate);
+      startTime.setHours(10, 0, 0, 0);
+      this.auctionStartTime = startTime;
+    }
+    
+    // Default auction end time is 5 PM on auction date
+    if (!this.auctionEndTime) {
+      const endTime = new Date(this.auctionDate);
+      endTime.setHours(17, 0, 0, 0);
+      this.auctionEndTime = endTime;
+    }
+  }
+  
+  next();
 });
 
 module.exports = mongoose.model('properties', propertySchema);
