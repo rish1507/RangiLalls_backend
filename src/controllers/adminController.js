@@ -4,6 +4,154 @@ const mongoose = require("mongoose");
 const Property = require("../models/Property");
 const User = require("../models/User");
 const AuctionRegistration = require("../models/AuctionRegistration");
+const AuctionBid = require('../models/AuctionBid');
+
+/**
+ * @desc    Get all completed auction reports
+ * @route   GET /api/admin/auction-reports
+ * @access  Private/Admin
+ */
+exports.getAuctionReports = async (req, res) => {
+  try {
+    // Get all properties with auctions that have ended
+    const currentDate = new Date();
+    const properties = await Property.find({
+      auctionDate: { $lt: currentDate } // Only include past auctions
+    }).sort({ auctionDate: -1 });
+
+    // Create the auction reports
+    const reports = await Promise.all(
+      properties.map(async property => {
+        // Get all bids for this auction
+        const bids = await AuctionBid.find({ auctionId: property._id.toString() })
+          .sort({ amount: -1 });
+
+        // Count unique bidders (participants)
+        const uniqueBidderIds = [...new Set(bids.map(bid => bid.userId.toString()))];
+        
+        // Get bidder details for the highest bid
+        let highestBidderName = 'No bids';
+        if (bids.length > 0) {
+          const highestBidder = await User.findById(bids[0].userId);
+          if (highestBidder) {
+            highestBidderName = `${highestBidder.firstName} ${highestBidder.lastName}`;
+          }
+        }
+
+        // Count approved registrations
+        const registrationCount = await AuctionRegistration.countDocuments({
+          auctionId: property._id,
+          status: 'approved'
+        });
+
+        // Return report data
+        return {
+          _id: property._id,
+          auctionId: property._id.toString(),
+          propertyType: property.propertyType,
+          propertyLocation: property.propertyLocation,
+          state: property.state,
+          customerName: property.customerName,
+          auctionDate: property.auctionDate,
+          reservePrice: property.reservePrice,
+          totalBids: bids.length,
+          highestBid: bids.length > 0 ? bids[0].amount : 0,
+          highestBidder: highestBidderName,
+          registeredParticipants: registrationCount,
+          activeBidders: uniqueBidderIds.length,
+          bids: bids.map(bid => ({ amount: bid.amount, timestamp: bid.timestamp })) // Just basic bid data
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      count: reports.length,
+      data: reports
+    });
+  } catch (error) {
+    console.error('Error generating auction reports:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error generating auction reports'
+    });
+  }
+};
+
+/**
+ * @desc    Get auction report for a specific auction
+ * @route   GET /api/admin/auction-reports/:auctionId
+ * @access  Private/Admin
+ */
+exports.getAuctionReportById = async (req, res) => {
+  try {
+    const { auctionId } = req.params;
+
+    // Get auction property
+    const property = await Property.findById(auctionId);
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: 'Auction not found'
+      });
+    }
+
+    // Get all bids for this auction
+    const bids = await AuctionBid.find({ auctionId: property._id.toString() })
+      .sort({ amount: -1 });
+
+    // Map the bids with user details
+    const bidsWithDetails = await Promise.all(
+      bids.map(async (bid) => {
+        const user = await User.findById(bid.userId);
+        return {
+          amount: bid.amount,
+          timestamp: bid.timestamp,
+          bidder: user ? `${user.firstName} ${user.lastName}` : 'Unknown User',
+          organization: user ? user.organizationName : 'N/A'
+        };
+      })
+    );
+
+    // Count unique bidders
+    const uniqueBidderIds = [...new Set(bids.map(bid => bid.userId.toString()))];
+
+    // Count approved registrations
+    const registrationCount = await AuctionRegistration.countDocuments({
+      auctionId: property._id,
+      status: 'approved'
+    });
+
+    // Return report data
+    const report = {
+      _id: property._id,
+      auctionId: property._id.toString(),
+      propertyType: property.propertyType,
+      propertyLocation: property.propertyLocation,
+      state: property.state,
+      customerName: property.customerName,
+      auctionDate: property.auctionDate,
+      reservePrice: property.reservePrice,
+      totalBids: bids.length,
+      highestBid: bids.length > 0 ? bids[0].amount : 0,
+      highestBidder: bidsWithDetails.length > 0 ? bidsWithDetails[0].bidder : 'No bids',
+      registeredParticipants: registrationCount,
+      activeBidders: uniqueBidderIds.length,
+      bids: bidsWithDetails
+    };
+
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    console.error(`Error generating auction report for auction ${req.params.auctionId}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error generating auction report'
+    });
+  }
+};
 // Get property count
 exports.getPropertyCount = async (req, res) => {
   try {
